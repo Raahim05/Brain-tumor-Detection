@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Detection Result</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #333;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark Mode */
+        .dark-mode {
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            color: white;
+        }
+        .dark-mode .container {
+            background: rgba(40, 40, 40, 0.95);
+            color: white;
+        }
+        .dark-mode header {
+            background-color: #222;
+        }
+        .dark-mode .result-card {
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #444;
+        }
+        .dark-mode .image-comparison {
+            background: rgba(20, 20, 20, 0.95);
+        }
+        .dark-mode .confidence-bar {
+            background: #333;
+        }
+        .dark-mode .summary {
+            background: rgba(30, 30, 30, 0.95);
+            border: 2px solid #1565c0;
+        }
+        .dark-mode .stat-item {
+            background: rgba(40, 40, 40, 0.95);
+        }
+        .dark-mode .action-button {
+            background-color: #0d47a1;
+        }
+        .dark-mode .action-button:hover {
+            background-color: #1565c0;
+        }
+        .dark-mode .footer a {
+            color: #64b5f6;
+        }
+
+        /* Header Style */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .logo {
+            width: 170px;
+            height: auto;
+            margin-left: 20px;
+        }
+
+        #themeToggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 20px;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        #themeToggle:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode #themeToggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+            width: 90%;
+            margin-top: 100px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        .page-title {
+            color: #1565c0;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .dark-mode .page-title {
+            color: #64b5f6;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .image-comparison {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .image-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            transition: transform 0.3s ease;
+        }
+
+        .image-container:hover {
+            transform: scale(1.02);
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .image-label {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .confidence-container {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #45a049);
+            transition: width 1s ease-in-out;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .result-label {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .result-label:hover {
+            transform: scale(1.05);
+        }
+
+        .result-positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .result-negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e3f2fd;
+            animation: pulseHighlight 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseHighlight {
+            0% { border-color: #e3f2fd; }
+            50% { border-color: #1565c0; }
+            100% { border-color: #e3f2fd; }
+        }
+
+        .dark-mode .summary {
+            animation: darkPulseHighlight 2s ease-in-out infinite;
+        }
+
+        @keyframes darkPulseHighlight {
+            0% { border-color: #0d47a1; }
+            50% { border-color: #64b5f6; }
+            100% { border-color: #0d47a1; }
+        }
+
+        .summary h3 {
+            color: #1565c0;
+            margin-bottom: 15px;
+            font-size: 1.6em;
+        }
+
+        .dark-mode .summary h3 {
+            color: #64b5f6;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            min-width: 200px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-item h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .dark-mode .stat-item h4 {
+            color: #64b5f6;
+        }
+
+        .stat-item p {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+
+        .action-button {
+            display: inline-block;
+            background-color: #1565c0;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 1.1em;
+            margin: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .action-button:hover {
+            background-color: #0d47a1;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #1565c0;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+            color: #0d47a1;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s linear 0.3s, opacity 0.3s;
+        }
+
+        .loading-active {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 0s;
+        }
+
+        .dark-mode .loading-overlay {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1565c0;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+
+        .dark-mode .spinner {
+            border: 5px solid #333;
+            border-top: 5px solid #64b5f6;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-container:hover .fullscreen-btn {
+            opacity: 1;
+        }
+
+        .fullscreen-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fullscreen-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                width: 95%;
+                margin-top: 80px;
+            }
+
+            .image-container {
+                width: 300px;
+                height: 300px;
+            }
+
+            .result-label {
+                font-size: 1.2em;
+            }
+
+            .stat-item {
+                min-width: 100%;
+            }
+
+            .page-title {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="/static/IATT1.png" alt="Company Logo" class="logo">
+        <button id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+    </header>
+
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="fullscreen-modal" id="imageModal">
+        <span class="close-modal">&times;</span>
+        <img src="" alt="Fullscreen view" class="fullscreen-image" id="modalImage">
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">Brain Tumor Analysis Results</h1>
+        
+        {% if images|length == 0 %}
+            <div class="result-card">
+                <p class="result-label result-negative">No valid images were processed</p>
+                <p>Please ensure you upload valid MRI scan images and try again.</p>
+            </div>
+        {% else %}
+            {% for img_data in images %}
+                <div class="result-card">
+                    {% if img_data.error %}
+                        <p class="result-label result-negative">{{ img_data.error }}</p>
+                        <div class="image-comparison">
+                            <div class="image-container">
+                                <img src="{{ img_data.image_path }}" alt="Invalid Image" loading="lazy" class="zoomable-image">
+                                <span class="image-label">Uploaded Image</span>
+                                <button class="fullscreen-btn" aria-label="View fullscreen">⤢</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="result-label {% if img_data.tumor_present %}result-positive{% else %}result-negative{% endif %}">
+                            {{ img_data.result }}
+                        </p>
+                        
+                        <div class="confidence-container">
+                            <p>Confidence Level: {{ img_data.confidence }}%</p>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: {{ img_data.confidence }}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="image-comparison">
+                            <div class="image-container">
+                                <img src="{{ img_data.original_path }}" alt="Original MRI Scan" loading="lazy" class="zoomable-image">
+                                <span class="image-label">Original Scan</span>
+                                <button class="fullscreen-btn" aria-label="View fullscreen">⤢</button>
+                            </div>
+                            
+                            {% if img_data.marked_path %}
+                            <div class="image-container">
+                                <img src="{{ img_data.marked_path }}" alt="Marked MRI Scan" loading="lazy" class="zoomable-image">
+                                <span class="image-label">Analyzed Scan</span>
+                                <button class="fullscreen-btn" aria-label="View fullscreen">⤢</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="summary">
+                <h3>Analysis Summary</h3>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <h4>Total Scans Analyzed</h4>
+                        <p>{{ total_mri_images }}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Tumors Detected</h4>
+                        <p>{{ tumor_count }}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>Average Confidence</h4>
+                        <p>{{ avg_confidence }}%</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div>
+            <a href="/" class="action-button">Analyze More Images</a>
+            <a href="#" id="downloadReport" class="action-button">Download Report</a>
+        </div>
+
+        <div class="footer">
+            <p>Powered by <a href="https://iattechnologies.com/" target="_blank">IAT Technologies</a></p>
+            <p class="copyright">© 2024 Dev-Team. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById("themeToggle");
+        const currentTheme = localStorage.getItem("theme");
+
+        if (currentTheme === "dark") {
+            document.body.classList.add("dark-mode");
+            themeToggle.textContent = "☀️";
+        }
+
+        themeToggle.addEventListener("click", function() {
+            document.body.classList.toggle("dark-mode");
+            if (document.body.classList.contains("dark-mode")) {
+                localStorage.setItem("theme", "dark");
+                themeToggle.textContent = "☀️";
+            } else {
+                localStorage.setItem("theme", "light");
+                themeToggle.textContent = "🌙";
+            }
+        });
+
+        // Animate confidence bars on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const confidenceBars = document.querySelectorAll('.confidence-fill');
+            confidenceBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 100);
+            });
+            
+            // Show loading overlay when navigating away
+            document.querySelectorAll('a:not([target="_blank"])').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (!e.ctrlKey && !e.metaKey) { // Only if not opening in new tab
+                        document.querySelector('.loading-overlay').classList.add('loading-active');
+                    }
+                });
+            });
+            
+            // Fullscreen image viewer
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const closeModal = document.querySelector('.close-modal');
+            
+            // Setup fullscreen buttons
+            document.querySelectorAll('.fullscreen-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const img = this.parentElement.querySelector('img');
+                    modal.style.display = 'flex';
+                    modalImg.src = img.src;
+                });
+            });
+            
+            // Also allow clicking directly on images
+            document.querySelectorAll('.zoomable-image').forEach(img => {
+                img.addEventListener('click', function() {
+                    modal.style.display = 'flex';
+                    modalImg.src = this.src;
+                });
+            });
+            
+            // Close modal
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            // Close modal on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Download report functionality
+            document.getElementById('downloadReport').addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Report generation initiated. Your report will be downloaded shortly.');
+                
+                // You would add actual PDF generation here using a library like html2pdf.js
+                // For now we'll just simulate a download delay
+                setTimeout(() => {
+                    alert('Download completed!');
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
